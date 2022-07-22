@@ -30,7 +30,9 @@ namespace VintagePong
             cdCanvas.ContinuousUpdate = false;
 
             // point for current mouse point, location of again button and quit button
-            Point ptMousePoint = new Point(-1, -1), ptAgainBtn, ptQuitBtn;
+            Point ptMousePoint = new Point(-1, -1), 
+                  ptAgainBtn = new Point(-1, -1), 
+                  ptQuitBtn = new Point(-1, -1);
             // boolean to start the game
             bool bStart = false;
 
@@ -67,7 +69,14 @@ namespace VintagePong
                     DrawPaddle(ptMousePoint, Color.Red, ref iPaddle_X, ref iPaddle_Y, iPaddleLength, iWallThickness, iPaddleThickness, cdCanvas);
 
                     // draw score board
-                    cdCanvas.AddText($"{iScore}", 30);
+                    if(!bStart)
+                    {
+                        cdCanvas.AddText("Click left mouse button to start the game", 20);
+                    }
+                    else
+                    {
+                        cdCanvas.AddText($"{iScore}", 30);
+                    }
 
                     // set boolean for starting game to true if mouse left button is clicked
                     if (cdCanvas.GetLastMouseLeftClickScaled(out ptMousePoint))
@@ -81,15 +90,76 @@ namespace VintagePong
 
                         MoveBall(ref iBall_X, ref iBall_Y, ref iBall_Xvel, ref iBall_Yvel, ref iSpeed, 
                             cdCanvas, iWallThickness, iPaddle_X, iPaddle_Y, iPaddleLength, ref iScore);
-
-                        Thread.Sleep(iSpeed);
                     }
+
+                    Thread.Sleep(iSpeed);
                 }
 
-                cdCanvas.Render();
-            } while (false);
+                bStart = false;
+
+                while (!cdCanvas.GetLastMouseLeftClickScaled(out ptMousePoint) 
+                    || !(ptAgainBtn == ptMousePoint) && !(ptQuitBtn == ptMousePoint))
+                {
+                    cdCanvas.Clear();
+                    cdCanvas.Render();
+
+                    cdCanvas.GetLastMousePositionScaled(out ptMousePoint);
+                    cdCanvas.AddText($"Final score: {iScore}", 40, Color.CadetBlue);
+
+                    if (!bStart)
+                    {
+                        Thread.Sleep(2000);
+                        bStart = true;
+                    }
+
+                    if (bStart)
+                    {
+                        //highlight the play again button when the mouse cursor is on this button  
+                        if (ptMousePoint.X >= 90 && ptMousePoint.X <= 110 && ptMousePoint.Y >= 100 && ptMousePoint.Y <= 120)
+                        {
+                            cdCanvas.AddRectangle(90, 100, 20, 10, Color.Green, 1, Color.Green);
+                            cdCanvas.AddText("Play Again", 13, 90, 100, 20, 10, Color.Black);
+                            cdCanvas.AddRectangle(125, 100, 20, 10, Color.Black, 1, Color.Red);
+                            cdCanvas.AddText("Quit", 13, 125, 100, 20, 10, Color.Red);
+                            Thread.Sleep(50);
+
+                            //get again button position
+                            ptAgainBtn = ptMousePoint;
+                        }
+
+                        //highlight the quit button when the mouse cursor is on this button 
+                        if (ptMousePoint.X >= 125 && ptMousePoint.X <= 145 && ptMousePoint.Y >= 100 && ptMousePoint.Y <= 120)
+                        {
+                            cdCanvas.AddRectangle(125, 100, 20, 10, Color.Red, 1, Color.Red);
+                            cdCanvas.AddText("Quit", 13, 125, 100, 20, 10, Color.Black);
+                            cdCanvas.AddRectangle(90, 100, 20, 10, Color.Black, 1, Color.Green);
+                            cdCanvas.AddText("Play Again", 13, 90, 100, 20, 10, Color.Green);
+                            Thread.Sleep(50);
+
+                            //get quit button position
+                            ptQuitBtn = ptMousePoint;
+                        }
+                        //draw the normal play again and quit buttons 
+                        else
+                        {
+                            cdCanvas.AddRectangle(90, 100, 20, 10, Color.Black, 1, Color.Green);
+                            cdCanvas.AddText("Play Again", 13, 90, 100, 20, 10, Color.Green);
+                            cdCanvas.AddRectangle(125, 100, 20, 10, Color.Black, 1, Color.Red);
+                            cdCanvas.AddText("Quit", 13, 125, 100, 20, 10, Color.Red);
+                            Thread.Sleep(50);
+                        }
+                    }
+
+                    Thread.Sleep(iSpeed);
+                    cdCanvas.Render();
+                }
+            } while (ptMousePoint == ptAgainBtn);
         }
 
+        #region MoveBall
+        /// <summary>
+        /// change the speed and direction of the ball
+        /// </summary>
         private static void MoveBall
             (ref int iBall_X, ref int iBall_Y, ref int iBall_Xvel, ref int iBall_Yvel, ref int iSpeed, 
             CDrawer cdCanvas, int iWallThickness, int iPaddle_X, int iPaddle_Y, int iPaddleLength, ref int iScore)
@@ -121,7 +191,12 @@ namespace VintagePong
             }
 
         }
+        #endregion
 
+        #region DrawPaddle
+        /// <summary>
+        /// drawing paddle
+        /// </summary>
         private static void DrawPaddle(Point ptMousePoint, Color col,ref int iPaddle_X, ref int iPaddle_Y, int iPaddleLength, int iWallThickness, int iPaddleThickness, CDrawer cdCanvas)
         {
             // set paddle's y boundary
@@ -136,12 +211,12 @@ namespace VintagePong
 
             cdCanvas.Render();
         }
+        #endregion
 
         #region DrawWalls
         /// <summary>
         /// draw top, right and bottom side walls
         /// </summary>
-        /// <param name="canvas"></param>
         private static void DrawWalls(CDrawer canvas, int iWallThickness)
         {
             // draw top wall
